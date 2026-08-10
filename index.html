@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Личный кабинет</title>
+    <!-- Подключаем библиотеку Telegram -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Сброс стилей и подключение системных цветов Telegram */
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #1c1c1d);
+            --text-color: var(--tg-theme-text-color, #ffffff);
+            --hint-color: var(--tg-theme-hint-color, #8e8e93);
+            --button-color: var(--tg-theme-button-color, #2a9df4);
+            --button-text: var(--tg-theme-button-text-color, #ffffff);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #2c2c2e);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Плавная анимация появления контента */
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* Шапка профиля */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 28px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--button-color), #8a2be2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            font-weight: 800;
+            box-shadow: 0 4px 15px rgba(42, 157, 244, 0.3);
+        }
+
+        .user-info h1 { font-size: 22px; margin-bottom: 4px; font-weight: 700; }
+        .user-info p { font-size: 14px; color: var(--hint-color); }
+
+        /* Дизайн карточек (Блоков) */
+        .card {
+            background-color: var(--secondary-bg);
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .card-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            color: var(--hint-color);
+            letter-spacing: 1.2px;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        /* Красивое отображение баланса */
+        .balance-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .balance-amount {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Кнопки */
+        .btn {
+            background-color: var(--button-color);
+            color: var(--button-text);
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .btn:active { transform: scale(0.97); filter: brightness(0.9); }
+        
+        .btn-secondary {
+            background-color: rgba(42, 157, 244, 0.1);
+            color: var(--button-color);
+            margin-bottom: 0;
+        }
+
+        /* Строки с настройками */
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(142, 142, 147, 0.15);
+        }
+        .setting-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+        .setting-info { display: flex; flex-direction: column; gap: 6px; }
+        .setting-title { font-size: 16px; font-weight: 600; }
+        .setting-desc { font-size: 14px; color: var(--hint-color); }
+
+        /* Переключатель в стиле iOS */
+        .switch { position: relative; display: inline-block; width: 54px; height: 32px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #39393d; transition: .3s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 28px; width: 28px; left: 2px; bottom: 2px;
+            background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider { background-color: #34c759; }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
+        /* Бейджик статуса */
+        .badge {
+            background-color: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .badge.inactive {
+            background-color: rgba(255, 59, 48, 0.15);
+            color: #ff3b30;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Шапка с аватаркой -->
+    <div class="profile-header">
+        <div class="avatar" id="avatarLetter">M</div>
+        <div class="user-info">
+            <h1 id="userName">Пользователь</h1>
+            <p id="userId">ID: Загрузка...</p>
+        </div>
+    </div>
+
+    <!-- Блок баланса -->
+    <div class="card">
+        <div class="card-title">Финансы</div>
+        <div class="balance-display">
+            <div>
+                <div style="font-size: 14px; color: var(--hint-color); margin-bottom: 6px; font-weight: 500;">Доступно средств</div>
+                <div class="balance-amount">0.00 ₽</div>
+            </div>
+        </div>
+        <!-- Кнопки отправляют данные обратно в бота -->
+        <button class="btn" onclick="tg.sendData('topup_yookassa')">
+            💳 Пополнить картой
+        </button>
+        <button class="btn btn-secondary" onclick="tg.sendData('topup_stars')">
+            ⭐ Telegram Stars
+        </button>
+    </div>
+
+    <!-- Блок подписки VPN -->
+    <div class="card">
+        <div class="card-title">Услуги VPN</div>
+        
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-title">Статус подписки</span>
+                <span class="setting-desc">Нет активной подписки</span>
+            </div>
+            <div class="badge inactive">Неактивен</div>
+        </div>
+        
+        <div class="setting-item" style="margin-top: 10px;">
+            <div class="setting-info">
+                <span class="setting-title">Автопродление</span>
+                <span class="setting-desc">200 ₽ / месяц</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="autoRenew" onchange="toggleAutoRenew()">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Web App
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем на весь экран
+        tg.ready(); // Сообщаем ТГ, что сайт готов
+
+        // Красим верхнюю панель ТГ в цвет карточек сайта
+        tg.setHeaderColor('secondary_bg_color');
+
+        // Подтягиваем реальные данные пользователя из Telegram
+        if (tg.initDataUnsafe.user) {
+            let user = tg.initDataUnsafe.user;
+            
+            document.getElementById('userName').textContent = user.first_name;
+            document.getElementById('userId').textContent = 'ID: ' + user.id;
+            
+            // Берем первую букву имени для крутой аватарки
+            if(user.first_name) {
+                document.getElementById('avatarLetter').textContent = user.first_name.charAt(0).toUpperCase();
+            }
+        }
+
+        // Обработка переключателя
+        function toggleAutoRenew() {
+            // Вибрация Taptic Engine при нажатии
+            tg.HapticFeedback.impactOccurred('medium'); 
+            
+            let isActive = document.getElementById('autoRenew').checked;
+            if(isActive) {
+                tg.sendData('toggle_renew_on');
+            } else {
+                tg.sendData('toggle_renew_off');
+            }
+        }
+    </script>
+</body>
+</html>
