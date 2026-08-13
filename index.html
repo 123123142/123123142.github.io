@@ -488,6 +488,27 @@
             console.log("Color API not supported on this client");
         }
 
+        // Parse URL Parameters passed from Bot.py
+        const urlParams = new URLSearchParams(window.location.search);
+        const balanceStr = urlParams.get('balance') || '0.00';
+        const subStatus = urlParams.get('sub') || 'Нет подписки';
+        const botUsername = urlParams.get('bot') || '';
+
+        // Update UI with real data
+        document.querySelector('.balance-amount').innerHTML = `${balanceStr} <span class="currency">₽</span>`;
+        
+        const subDescEl = document.querySelectorAll('.setting-desc')[0];
+        const statusBadgeEl = document.querySelector('.status-badge');
+        
+        subDescEl.textContent = subStatus;
+        if (subStatus !== "Нет подписки") {
+            statusBadgeEl.textContent = "Активен";
+            statusBadgeEl.classList.remove('inactive');
+        } else {
+            statusBadgeEl.textContent = "Неактивен";
+            statusBadgeEl.classList.add('inactive');
+        }
+
         // Fetch User Data from Telegram SDK
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             const user = tg.initDataUnsafe.user;
@@ -507,25 +528,27 @@
 
         // UI Interactions
         function triggerTopUp(method) {
-            // Provide haptic feedback
             tg.HapticFeedback.impactOccurred('light');
             
-            // Add a small delay for the button animation to complete before closing/sending
             setTimeout(() => {
-                if (method === 'yookassa') {
-                    tg.sendData('topup_yookassa');
-                } else if (method === 'stars') {
-                    tg.sendData('topup_stars');
+                if (botUsername) {
+                    // Используем deep-link для общения с ботом из Inline Web App
+                    tg.openTelegramLink(`https://t.me/${botUsername}?start=topup_${method}`);
+                } else {
+                    tg.sendData(`topup_${method}`);
                 }
             }, 100);
         }
 
         function toggleAutoRenew() {
-            // Provide haptic feedback for switch toggle
             tg.HapticFeedback.impactOccurred('medium');
             
             const isActive = document.getElementById('autoRenew').checked;
-            tg.sendData(isActive ? 'toggle_renew_on' : 'toggle_renew_off');
+            if (botUsername) {
+                tg.openTelegramLink(`https://t.me/${botUsername}?start=toggle_renew_${isActive ? 'on' : 'off'}`);
+            } else {
+                tg.sendData(isActive ? 'toggle_renew_on' : 'toggle_renew_off');
+            }
         }
     </script>
 </body>
